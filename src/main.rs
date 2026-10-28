@@ -1,10 +1,9 @@
-use hello::thread_pool::ThreadPool;
 use hello::handle_connection;
+use hello::thread_pool::ThreadPool;
 use std::net::TcpListener;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878")
-        .expect("Could not bind to 127.0.0.1:7878");
+    let listener = TcpListener::bind("127.0.0.1:7878").expect("Could not bind to 127.0.0.1:7878");
 
     let pool = ThreadPool::new(4);
 

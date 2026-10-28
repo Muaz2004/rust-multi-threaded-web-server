@@ -1,4 +1,4 @@
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -46,20 +46,22 @@ impl ThreadPool {
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Self {
-        let thread = thread::spawn(move || loop {
-            let message = {
-                let receiver = receiver.lock().expect("Worker receiver mutex poisoned");
-                receiver.recv()
-            };
+        let thread = thread::spawn(move || {
+            loop {
+                let message = {
+                    let receiver = receiver.lock().expect("Worker receiver mutex poisoned");
+                    receiver.recv()
+                };
 
-            match message {
-                Ok(Message::NewJob(job)) => {
-                    println!("Worker {id} got a job; executing.");
-                    job();
-                }
-                Ok(Message::Terminate) | Err(_) => {
-                    println!("Worker {id} shutting down.");
-                    break;
+                match message {
+                    Ok(Message::NewJob(job)) => {
+                        println!("Worker {id} got a job; executing.");
+                        job();
+                    }
+                    Ok(Message::Terminate) | Err(_) => {
+                        println!("Worker {id} shutting down.");
+                        break;
+                    }
                 }
             }
         });
@@ -85,10 +87,10 @@ impl Drop for ThreadPool {
         for worker in &mut self.workers {
             println!("Shutting down worker {}", worker.id);
 
-            if let Some(thread) = worker.thread.take() {
-                if thread.join().is_err() {
-                    eprintln!("Worker {} panicked", worker.id);
-                }
+            if let Some(thread) = worker.thread.take()
+                && thread.join().is_err()
+            {
+                eprintln!("Worker {} panicked", worker.id);
             }
         }
 
@@ -108,12 +110,14 @@ mod tests {
 
         for _ in 0..8 {
             let completed = Arc::clone(&completed);
+
             pool.execute(move || {
                 completed.fetch_add(1, Ordering::SeqCst);
             });
         }
 
         drop(pool);
+
         assert_eq!(completed.load(Ordering::SeqCst), 8);
     }
 

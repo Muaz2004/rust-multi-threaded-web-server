@@ -9,7 +9,11 @@ const HELLO_HTML: &str = include_str!("../web/hello.html");
 const NOT_FOUND_HTML: &str = include_str!("../web/404.html");
 
 fn response_for_request(request_line: &str) -> (&'static str, &'static str) {
-    match request_line.split_whitespace().collect::<Vec<_>>().as_slice() {
+    match request_line
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
         ["GET", "/", "HTTP/1.1"] => ("200 OK", HELLO_HTML),
         ["GET", "/sleep", "HTTP/1.1"] => ("200 OK", HELLO_HTML),
         _ => ("404 NOT FOUND", NOT_FOUND_HTML),
